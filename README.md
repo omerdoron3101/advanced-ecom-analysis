@@ -100,7 +100,7 @@ BEGIN
         PRINT '=============================================================================';
 
         -- =============================
-        -- 1️⃣ Customers
+        -- 1️. Customers
         -- =============================
         PRINT '>> Loading dim_customers';
         TRUNCATE TABLE silver.dim_customers;
@@ -144,11 +144,11 @@ END
 * Built using **Star Schema** principles.
 * Includes high-level analytical views for business insights.
 * Dimension tables (`Dim_`) and Fact table (`Fact_`).
-* Optimized for BI performance and visualization.
+* Optimized for BI performance and visualization.  
+    
   
+<img width="1000" height="610" alt="Gold Layer Overview" src="https://github.com/user-attachments/assets/5a22b8b9-cf9b-47d2-88a9-c07dc8c6ec6f" />  
   
-<img width="1000" height="610" alt="Gold Layer Overview" src="https://github.com/user-attachments/assets/5a22b8b9-cf9b-47d2-88a9-c07dc8c6ec6f" />
-
 
 **Proposed Tables:**
 
