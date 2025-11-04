@@ -15,12 +15,12 @@ This project focuses on building a scalable and reliable data ecosystem - from r
 2. [Goals](#goals)
 3. [Architecture](#architecture)
 4. [Data Sources](#data-sources)
-7. [Detailed Layer Design](#detailed-layer-design)
-9. [Data Quality & Idempotency](#data-quality--idempotency)
-10. [Engineering Decisions & Rationale](#engineering-decisions--rationale)
-12. [Testing & CI](#testing--ci)
-13. [Future Development](#future-development)
-14. [About Me](#license--credits)
+5. [Detailed Layer Design](#detailed-layer-design)
+6. [Data Quality & Idempotency](#data-quality--idempotency)
+7. [Engineering Decisions & Rationale](#engineering-decisions--rationale)
+8. [Testing & CI](#testing--ci)
+9. [Future Development](#future-development)
+10. [About Me](#license--credits)
 
 ---
 
