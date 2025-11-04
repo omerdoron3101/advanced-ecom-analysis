@@ -138,12 +138,12 @@ CASE WHEN avg_review_score >= 4.5 THEN 'Excellent'
 ---
 
 ## 💡 Key Design Decisions
-**1. Precomputed aggregates:** reduce runtime on BI dashboards.
-**2. Tier-based segmentation:** simplifies analysis for marketing and operations.
-**3. RFM & lifetime calculations:** allow customer segmentation and retention analysis.
-**4. Consistent dimension linking:** ensures facts are always connected to context.
-**5. Rolling averages and trends:** support operational alerts and forecasting.
-**6. Error handling with `TRY_CONVERT`:** ensures robustness against dirty Bronze data.
+**1. Precomputed aggregates:** reduce runtime on BI dashboards.  
+**2. Tier-based segmentation:** simplifies analysis for marketing and operations.  
+**3. RFM & lifetime calculations:** allow customer segmentation and retention analysis.  
+**4. Consistent dimension linking:** ensures facts are always connected to context.  
+**5. Rolling averages and trends:** support operational alerts and forecasting.  
+**6. Error handling with `TRY_CONVERT`:** ensures robustness against dirty Bronze data.  
 
 ---
 
