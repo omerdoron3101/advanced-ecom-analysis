@@ -9,20 +9,7 @@ This project focuses on building a scalable and reliable data ecosystem - from r
 
 ---
 
-## 📑 Table of Contents
 
-1. [Project Overview](#project-overview)  
-2. [Goals](#goals)  
-3. [Architecture](#architecture)  
-4. [Data Sources](#data-sources)  
-5. [Detailed Layer Design](#detailed-layer-design)  
-6. [Data Quality & Idempotency](#data-quality--idempotency)  
-7. [Engineering Decisions & Rationale](#engineering-decisions--rationale)  
-8. [Testing & CI](#testing--ci)  
-9. [Future Development](#future-development)  
-10. [About Me](#about-me)
-    
----
 
 ## 🛠️ Project Overview
 
