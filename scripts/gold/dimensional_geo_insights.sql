@@ -2,29 +2,28 @@
    Dimensional Geo Insights
    =============================================================================
    Script Purpose:
-      Generate dimensional insights on product category and geographic performance 
-      using Gold layer views. The script aggregates sales, revenue, shipping, 
-      and customer satisfaction metrics at multiple levels:
-         1. Product Category Performance
-         2. Geographic Analysis by City/State
-         3. City Performance Metrics
-         4. City-Category Performance Metrics
+      Analyze product category and geographic performance using Gold layer views.
+      The analysis includes:
+         1️. Product Category Performance
+         2️. City Performance (Geo Insights)
+         3️. City-Category Performance
 
-      Key Metrics:
-         - Average review scores per product and category
+      Metrics Calculated:
+         - Average review scores
          - Average shipping days
          - Average product price
          - Total orders and revenue
          - Rankings and performance tiers (Revenue, Satisfaction, Shipping)
 
       Notes:
-         - Uses Gold layer views: dim_product_view, fact_order_items_view, 
-           fact_payments_view, fact_reviews_view.
-         - Queries are read-only.
-         - Tiers are calculated based on relative averages across the dataset.
+         - Uses Gold views: dim_product_view, fact_order_items_view, fact_payments_view, fact_reviews_view
+         - Queries are read-only
+         - Tiers are calculated relative to dataset averages
    ============================================================================= */
 
--- 1. Product Category Performance
+-- =====================================================
+-- 1️. Product Category Performance
+-- =====================================================
 WITH score_by_product AS (
     SELECT 
         product_id,
@@ -49,7 +48,7 @@ SELECT
     ROUND(AVG(pd.avg_shipping_days), 2) AS category_avg_shipping_days,
     CASE 
         WHEN ROUND(AVG(pd.avg_shipping_days), 2) <= 7 THEN 'Fast Shipping'
-        WHEN ROUND(AVG(pd.avg_shipping_days), 2) BETWEEN 8 AND 10 THEN 'Moderate Shipping'
+        WHEN ROUND(AVG(pd.avg_shipping_days), 2) BETWEEN 8 AND 10 THEN 'Moderate'
         ELSE 'Slow Shipping'
     END AS shipping_performance_tier,
     ROUND(AVG(pd.avg_product_price), 2) AS category_avg_product_price,
@@ -61,38 +60,14 @@ SELECT
     SUM(pd.product_orders) AS category_order_count,
     ROUND(CAST(SUM(pd.product_orders) AS FLOAT) / COUNT(p.product_id), 2) AS orders_per_product
 FROM gold.dim_product_view AS p
-LEFT JOIN score_by_product AS s
-    ON p.product_id = s.product_id
-LEFT JOIN products_details AS pd
-    ON p.product_id = pd.product_id
+LEFT JOIN score_by_product AS s ON p.product_id = s.product_id
+LEFT JOIN products_details AS pd ON p.product_id = pd.product_id
 GROUP BY p.product_category_name_english
 ORDER BY category_avg_score DESC;
 
--- 2. Geographic Analysis (City/State level)
-WITH geo_analysis AS (
-    SELECT 
-        oi.customer_city,
-        oi.customer_state,
-        COUNT(DISTINCT oi.order_id) AS total_orders,
-        COUNT(DISTINCT oi.product_id) AS total_products,
-        COUNT(DISTINCT p.product_category_name_english) AS distinct_categories,
-        ROUND(SUM(pay.payment_value), 2) AS total_revenue,
-        ROUND(AVG(pay.payment_value), 2) AS avg_order_value,
-        ROUND(AVG(r.review_score), 2) AS avg_review_score
-    FROM gold.fact_order_items_view AS oi
-    LEFT JOIN gold.fact_payments_view AS pay
-        ON oi.order_id = pay.order_id
-    LEFT JOIN gold.fact_reviews_view AS r
-        ON oi.order_id = r.order_id
-    LEFT JOIN gold.dim_product_view AS p
-        ON oi.product_id = p.product_id
-    GROUP BY oi.customer_city, oi.customer_state
-)
-SELECT *
-FROM geo_analysis
-ORDER BY total_revenue DESC;
-
--- 3. City Performance Metrics
+-- =====================================================
+-- 2️. City Performance (Geo Insights)
+-- =====================================================
 WITH city_performance AS (
     SELECT 
         f.customer_city,
@@ -111,7 +86,7 @@ WITH city_performance AS (
     WHERE f.customer_city IS NOT NULL
     GROUP BY f.customer_city, f.customer_state
 ),
-ranked AS (
+ranked_cities AS (
     SELECT *,
         RANK() OVER (ORDER BY total_revenue DESC) AS revenue_rank,
         RANK() OVER (ORDER BY avg_review_score DESC) AS satisfaction_rank,
@@ -133,11 +108,13 @@ ranked AS (
         END AS shipping_tier
     FROM city_performance
 )
-SELECT TOP 10 *
-FROM ranked
+SELECT *
+FROM ranked_cities
 ORDER BY total_revenue DESC;
 
--- 4. City-Category Performance Metrics
+-- =====================================================
+-- 3️. City-Category Performance
+-- =====================================================
 WITH city_category_stats AS (
     SELECT 
         f.customer_city,
