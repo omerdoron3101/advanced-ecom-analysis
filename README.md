@@ -87,6 +87,10 @@ CREATE TABLE bronze.olist_orders_dataset (
 * Normalizes keys and date formats with `TRY_CONVERT`.
 * Creates consistent business keys.
 
+<br>
+<img width="1920" height="708" alt="silver fact_payment" src="https://github.com/user-attachments/assets/30b2568b-9691-4716-8458-9ac0b3d208d9" />
+<br>
+  
 **Example:**
 
 ```sql
