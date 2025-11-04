@@ -103,30 +103,53 @@ CREATE TABLE bronze.olist_orders_dataset (
 **Example:**
 
 ```sql
-        PRINT '>> Loading dim_orders';
-        TRUNCATE TABLE silver.dim_orders;
+CREATE OR ALTER PROCEDURE silver.load_silver AS
+BEGIN
+    SET NOCOUNT ON;
 
-        INSERT INTO silver.dim_orders (
-            order_id,
+    BEGIN TRY
+        PRINT '=============================================================================';
+        PRINT 'Starting Silver Layer Load';
+        PRINT '=============================================================================';
+
+        -- =============================
+        -- 1️⃣ Customers
+        -- =============================
+        PRINT '>> Loading dim_customers';
+        TRUNCATE TABLE silver.dim_customers;
+
+        INSERT INTO silver.dim_customers (
             customer_id,
-            order_status,
-            order_purchase_timestamp,
-            order_approved_at,
-            order_delivered_carrier_date,
-            order_delivered_customer_date,
-            order_estimated_delivery_date
+            customer_unique_id,
+            customer_zip_code_prefix,
+            customer_city,
+            customer_state
         )
         SELECT
-            TRIM(order_id),
-            TRIM(COALESCE(customer_id,'N/A')),
-            TRIM(COALESCE(order_status,'N/A')),
-            COALESCE(TRY_CONVERT(DATETIME, order_purchase_timestamp, 103), '1900-01-01'),
-            TRY_CONVERT(DATETIME, order_approved_at, 103),
-            TRY_CONVERT(DATETIME, order_delivered_carrier_date, 103),
-            TRY_CONVERT(DATETIME, order_delivered_customer_date, 103),
-            TRY_CONVERT(DATE, order_estimated_delivery_date, 103)
-        FROM bronze.olist_orders_dataset
-        WHERE order_id IS NOT NULL;
+            TRIM(customer_id),
+            TRIM(customer_unique_id),
+            COALESCE(TRY_CAST(customer_zip_code_prefix AS INT), -1),
+            UPPER(TRIM(COALESCE(customer_city,'N/A'))),
+            UPPER(TRIM(COALESCE(customer_state,'N/A')))
+        FROM bronze.olist_customers_dataset
+        WHERE customer_id IS NOT NULL
+          AND customer_unique_id IS NOT NULL
+        GROUP BY customer_id, customer_unique_id, customer_zip_code_prefix, customer_city, customer_state;
+
+...
+
+        PRINT '=============================================================================';
+        PRINT 'Silver Layer Load Completed Successfully';
+        PRINT '=============================================================================';
+
+    END TRY
+    BEGIN CATCH
+        PRINT '=============================================================================';
+        PRINT 'ERROR during Silver Layer Load:';
+        PRINT ERROR_MESSAGE();
+        PRINT '=============================================================================';
+    END CATCH
+END
 ```
 
 ### Gold - Analytical Layer
