@@ -1,0 +1,157 @@
+/* =============================================================================
+   DATA VALIDATION QUERIES
+   =============================================================================
+   Script Purpose:
+      Validate the raw Bronze layer datasets before further
+      processing and transformation into Silver/Gold layers. These queries are
+      used to detect inconsistencies, missing values, and data quality issues
+      across all major entities (Customers, Orders, Products, Sellers, Geolocation,
+      Order Items, Payments, Reviews).
+
+      Validation checks include:
+         1. Counting total vs. unique IDs
+         2. Detecting nulls or invalid values
+         3. Identifying inconsistencies in date fields
+         4. Checking for invalid numeric values (e.g., weight, dimensions)
+         5. Verifying text field quality (trimming issues, numeric characters in strings)
+         6. Identifying duplicate or inconsistent geolocation entries
+         7. Spotting missing or invalid transactional and review data
+
+   ⚠️ WARNING:
+      These queries only read the Bronze tables and do not modify any
+      data. Use results to inform cleansing or transformation scripts in Silver layer.
+   ============================================================================= */
+
+-- ===============================
+-- 1. Customers Validation
+-- ===============================
+
+SELECT COUNT(customer_id) AS total_customers,
+       COUNT(DISTINCT customer_id) AS unique_customers
+FROM bronze.olist_customers_dataset;
+
+SELECT COUNT(customer_unique_id) AS total_customers,
+       COUNT(DISTINCT customer_unique_id) AS unique_customers
+FROM bronze.olist_customers_dataset;
+
+SELECT COUNT(*)
+FROM (
+    SELECT customer_id, customer_unique_id
+    FROM bronze.olist_customers_dataset
+    GROUP BY customer_id, customer_unique_id
+) t;
+
+SELECT DISTINCT customer_zip_code_prefix
+FROM bronze.olist_customers_dataset
+WHERE TRY_CAST(customer_zip_code_prefix AS INT) IS NULL 
+   OR TRY_CAST(customer_zip_code_prefix AS INT) <= 0;
+
+SELECT DISTINCT customer_city
+FROM bronze.olist_customers_dataset;
+
+SELECT DISTINCT customer_state
+FROM bronze.olist_customers_dataset;
+
+-- ===============================
+-- 2. Orders Validation
+-- ===============================
+
+SELECT DISTINCT order_status
+FROM bronze.olist_orders_dataset;
+
+SELECT *
+FROM (
+    SELECT TRIM(order_id) AS order_id,
+           TRIM(COALESCE(customer_id, 'N/A')) AS customer_id,
+           TRIM(COALESCE(order_status, 'N/A')) AS order_status,
+           COALESCE(TRY_CONVERT(DATETIME, order_purchase_timestamp, 103), '1900-01-01') AS order_purchase_timestamp,
+           TRY_CONVERT(DATETIME, order_approved_at, 103) AS order_approved_at,
+           TRY_CONVERT(DATETIME, order_delivered_carrier_date, 103) AS order_delivered_carrier_date,
+           TRY_CONVERT(DATETIME, order_delivered_customer_date, 103) AS order_delivered_customer_date,
+           TRY_CONVERT(DATE, order_estimated_delivery_date, 103) AS order_estimated_delivery_date
+    FROM bronze.olist_orders_dataset
+    WHERE order_id IS NOT NULL
+) t
+WHERE order_delivered_customer_date < order_purchase_timestamp
+   OR order_approved_at < order_purchase_timestamp
+   OR order_estimated_delivery_date < order_purchase_timestamp;
+
+-- ===============================
+-- 3. Products Validation
+-- ===============================
+
+SELECT *
+FROM bronze.olist_products_dataset
+WHERE product_weight_g <= 0 
+   OR product_length_cm <= 0 
+   OR product_height_cm <= 0 
+   OR product_width_cm <= 0;
+
+-- ===============================
+-- 4. Sellers Validation
+-- ===============================
+
+SELECT *
+FROM bronze.olist_sellers_dataset
+WHERE seller_city LIKE '%[0-9]%'
+   OR seller_city IS NULL;
+
+WITH seller_cleanup AS (
+    SELECT
+        seller_id,
+        LEN(seller_city) AS original_city_length,
+        LEN(TRIM(seller_city)) AS trimmed_city_length,
+        LEN(seller_state) AS original_state_length,
+        LEN(TRIM(seller_state)) AS trimmed_state_length
+    FROM bronze.olist_sellers_dataset
+)
+SELECT seller_id,
+       original_city_length,
+       trimmed_city_length,
+       original_state_length,
+       trimmed_state_length
+FROM seller_cleanup
+WHERE original_city_length <> trimmed_city_length
+   OR original_state_length <> trimmed_state_length;
+
+-- ===============================
+-- 5. Geolocation Validation
+-- ===============================
+
+SELECT 
+  geolocation_zip_code_prefix,
+  COUNT(DISTINCT geolocation_lat) AS lat_variants,
+  COUNT(DISTINCT geolocation_lng) AS lng_variants
+FROM bronze.olist_geolocation_dataset
+GROUP BY geolocation_zip_code_prefix
+HAVING COUNT(DISTINCT geolocation_lat) > 1 
+    OR COUNT(DISTINCT geolocation_lng) > 1;
+
+-- ===============================
+-- 6. Order Items Validation
+-- ===============================
+
+SELECT *
+FROM bronze.olist_order_items_dataset
+WHERE price IS NULL
+   OR price <= 0
+   OR freight_value < 0;
+
+-- ===============================
+-- 7. Payments Validation
+-- ===============================
+
+SELECT DISTINCT payment_type
+FROM bronze.olist_order_payments_dataset;
+
+-- ===============================
+-- 8. Reviews Validation
+-- ===============================
+
+SELECT *
+FROM bronze.olist_order_reviews_dataset
+WHERE review_creation_date IS NULL;
+
+SELECT *
+FROM bronze.olist_order_reviews_dataset
+WHERE review_score NOT BETWEEN 1 AND 5;
