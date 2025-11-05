@@ -88,7 +88,7 @@ CREATE TABLE bronze.olist_orders_dataset (
 * Creates consistent business keys.
 
 <br>
-<img width="1920" height="719" alt="silver_keys" src="https://github.com/user-attachments/assets/f48959d3-9d5b-4c7e-818d-5f63ec3050eb" />
+<img width="1920" height="705" alt="silver_keys" src="https://github.com/user-attachments/assets/f28d2829-8cfd-48be-be59-9b6fc994f0d6" />
 <br>
 
 **Example:**
